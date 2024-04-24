@@ -1,0 +1,37 @@
+---
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+resources:
+  - https://raw.githubusercontent.com/kubernetes/ingress-nginx/main/deploy/static/provider/kind/deploy.yaml
+  - tcp-services.yaml
+patches:
+  - target:
+      group: apps
+      version: v1
+      kind: Deployment
+      name: ingress-nginx-controller
+    patch: |-
+      - op: add
+        path: /spec/template/spec/containers/0/args/-
+        value: --enable-ssl-passthrough
+      - op: add
+        path: /spec/template/spec/containers/0/args/-
+        value: --tcp-services-configmap=ingress-nginx/tcp-services
+      - op: add
+        path: /spec/template/spec/containers/0/ports/-
+        value:
+          containerPort: 4566
+          hostPort: 4566
+          name: tcp-4566
+          protocol: TCP
+  - target:
+      version: v1
+      kind: Service
+      name: ingress-nginx-controller
+    patch: |-
+      - op: add
+        path: /spec/ports/-
+        value:
+          name: tcp-4566
+          port: 4566
+          targetPort: 4566

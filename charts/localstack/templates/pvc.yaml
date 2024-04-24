@@ -1,0 +1,28 @@
+{{- if and .Values.persistence.enabled (not .Values.persistence.existingClaim) }}
+kind: PersistentVolumeClaim
+apiVersion: v1
+metadata:
+  name: {{ include "common.names.fullname" . }}
+  namespace: {{ .Release.Namespace | quote }}
+  labels:
+    {{- include "localstack.labels" . | nindent 4 }}
+  annotations:
+    {{- include "localstack.annotations" . | nindent 4 }}
+    {{- with .Values.persistence.annotations }}
+    {{- tpl (toYaml .) $ | nindent 4 }}
+    {{- end }}
+spec:
+  accessModes:
+  {{- if not (empty .Values.persistence.accessModes) }}
+  {{- range .Values.persistence.accessModes }}
+    - {{ . | quote }}
+  {{- end }}
+  {{- end }}
+  resources:
+    requests:
+      storage: {{ .Values.persistence.size | quote }}
+  {{- include "common.storage.class" (dict "persistence" .Values.persistence "global" .Values.global) | nindent 2 }}
+  {{- if .Values.persistence.dataSource }}
+  dataSource: {{- include "common.tplvalues.render" (dict "value" .Values.persistence.dataSource "context" $) | nindent 4 }}
+  {{- end }}
+{{- end }}

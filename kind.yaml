@@ -1,0 +1,42 @@
+---
+# Kind cluster configuration
+# https://kind.sigs.k8s.io/docs/user/configuration/
+#
+# start kind with this file
+# kind create cluster -n <cluster_name> --config kind.yaml
+kind: Cluster
+apiVersion: kind.x-k8s.io/v1alpha4
+nodes:
+# Control-plane node
+- role: control-plane
+  # Patch kubeadm to add node labels for accepting ingress.
+  kubeadmConfigPatches:
+  - |
+    kind: InitConfiguration
+    nodeRegistration:
+      kubeletExtraArgs:
+        node-labels: "ingress-ready=true"
+  extraPortMappings:
+  - containerPort: 80
+    hostPort: 80
+    protocol: TCP
+  - containerPort: 443
+    hostPort: 443
+    protocol: TCP
+  - containerPort: 4566
+    hostPort: 4566
+    protocol: TCP
+  extraMounts:
+  # Mount the docker socket from the host machine to the kind node
+  - hostPath: /var/run/docker.sock
+    containerPath: /var/run/docker.sock
+# Worker nodes
+- role: worker
+  extraMounts:
+  - hostPath: /var/run/docker.sock
+    containerPath: /var/run/docker.sock
+
+- role: worker
+  extraMounts:
+  - hostPath: /var/run/docker.sock
+    containerPath: /var/run/docker.sock
