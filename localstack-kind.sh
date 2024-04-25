@@ -90,6 +90,8 @@ function print_logs () {
   done
 }
 
+##
+# This function is used to wait for CRDs to be created in the cluster.
 function wait_for_cluster_resource () {
   local name=$1
   local type=$2
@@ -104,6 +106,9 @@ function wait_for_cluster_resource () {
   echo
 }
 
+##
+# This function is used to wait for a pod to be created. Once created, it
+# will further wait until the API marks the pod as being ready.
 function wait_for_pod_ready () {
   local name=$1
   local namespace=$2
@@ -134,12 +139,17 @@ function header () {
   tput sgr0
 }
 
+##
+# If kind is not installed, we cannot continue
 if ! command -v kind &>/dev/null; then
   echo "kind not found, please install it"
   echo "https://kind.sigs.k8s.io/docs/user/quick-start/#installation"
   exit 1
 fi
 
+##
+# Create the providers file.
+# Provider family AWS is always created
 cat <<EOT > providers-generated.yaml
 apiVersion: pkg.crossplane.io/v1
 kind: Provider
@@ -149,6 +159,9 @@ spec:
   package: xpkg.upbound.io/upbound/provider-family-aws:${DEFAULT_VERSION}
 EOT
 
+##
+# add the selected providers and functions to the providers file
+#
 for provider in "${DEFAULT_PROVIDERS[@]}"; do
   name="$(awk -F: '{print $1}' <<< $provider)"
   version="$(awk -F: '{print $2}' <<< $provider)"
@@ -192,6 +205,7 @@ if [ ! -d bin ]; then
 fi
 export PATH=$PATH:$(pwd)/bin
 
+# Install additional tools kustomize and helm
 {
   cd bin
   if ! command -v kustomize &>/dev/null; then
@@ -226,8 +240,8 @@ header "Setting up kind cluster 'localstack'..."
   echo
 }
 
-name="nginx"
 ## install nginx-ingress
+name="nginx"
 header "Installing nginx-ingress"
 {
   kustomize build ./nginx | kubectl apply -f - | print_logs $name
@@ -243,8 +257,8 @@ header "Adding helm repos..."
   helm repo update | print_logs $name
 }
 
-name="localstack"
 # install localstack
+name="localstack"
 header "Installing localstack..."
 {
   kubectl create namespace localstack-system | print_logs $name
@@ -268,8 +282,8 @@ header "Installing localstack..."
     localstack-repo/localstack --values localstack-values.yaml | print_logs $name
 }
 
-name="crossplane"
 # install crossplane
+name="crossplane"
 header "Installing Crossplane..."
 {
   kubectl create namespace crossplane-system | print_logs $name
@@ -296,6 +310,7 @@ echo
 echo "Sleeping 30 seconds"
 sleep 30
 
+# install the providers and provider config
 name="providers"
 header "Installing Crossplane providers and functions..."
 {
