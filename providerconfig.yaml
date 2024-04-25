@@ -12,7 +12,6 @@ spec:
       - iam
       - kms
       - kinesis
-      - ""
       - dynamodb
       - lambda
       - sqs
