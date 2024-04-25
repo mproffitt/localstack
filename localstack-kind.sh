@@ -248,12 +248,19 @@ name="localstack"
 header "Installing localstack..."
 {
   kubectl create namespace localstack-system | print_logs $name
+  yq -ie 'del(.extraenvvars[] | select(.name == "LOCALSTACK_AUTH_TOKEN"))' localstack-values.yaml
+  yq -ie '.image.repository = "localstack/localstack"' localstack-values.yaml
+
   if [ -n "$LOCALSTACK_AUTH_TOKEN" ]; then
     echo "  [localstack] Installing localstack-pro..."
     echo "  [localstack] Creating localstack-auth-token secret..."
     kubectl create secret generic localstack-auth-token --namespace localstack-system \
       --from-literal=token="$LOCALSTACK_AUTH_TOKEN" | print_logs $name
-    sed -i 's#localstack/localstack$#localstack/localstack-pro#' localstack-values.yaml
+
+    # Edit the values file to use the pro image and add the auth token
+    yq -ie '.image.repository = "localstack/localstack-pro"' localstack-values.yaml
+    yq -ie '.extraEnvVars += [{"name": "LOCALSTACK_AUTH_TOKEN", "valueFrom": {"secret": {"name": "localstack-auth-token", "key": "token"}}}]' localstack-values.yaml
+  else
   fi
 
   # rebuild chart dependencies

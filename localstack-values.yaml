@@ -2,32 +2,20 @@
 # Only change the image from `localstack/localstack` to `localstack/localstack-pro
 # if you have a pro subscription. Otherwise leave it on the default image.
 image:
-  repository: localstack/localstack
-
+  repository: localstack/localstack-pro
 extraEnvVars:
-# If you have a pro subscription, set the LOCALSTACK_AUTH_TOKEN to the value
-# of your auth token.
-#
-# This is loaded from secret which should be created with
-# ```
-# kubectl create secret generic localstack-auth-token \
-#   --namespace localstack-system --from-literal=token=<your-token>
-# ```
-- name: LOCALSTACK_AUTH_TOKEN
-  valueFrom:
-    secretKeyRef:
-      name: localstack-auth-token
-      key: token
-- name: LS_LOG
-  value: debug
-
+  - name: LS_LOG
+    value: debug
+  - name: LOCALSTACK_AUTH_TOKEN
+    valueFrom:
+      secret:
+        name: localstack-auth-token
+        key: token
 debug: true
-
 mountDind:
   enabled: true
   forceTLS: true
   image: "docker:26-dind"
-
 ingress:
   enabled: true
   ingressClassName: "nginx"
@@ -36,19 +24,17 @@ ingress:
     nginx.ingress.kubernetes.io/ssl-passthrough: "true"
     nginx.ingress.kubernetes.io/ssl-redirect: "true"
   hosts:
-  - host: localhost.localstack.cloud
-    paths:
-      - path: /
-        pathType: ImplementationSpecific
+    - host: localhost.localstack.cloud
+      paths:
+        - path: /
+          pathType: ImplementationSpecific
   tls: []
-
 lambda:
   executor: "kubernetes"
-
 volumes:
-- name: docker-sock
-  hostPath:
-    path: /var/run/docker.sock
+  - name: docker-sock
+    hostPath:
+      path: /var/run/docker.sock
 volumeMounts:
-- name: docker-sock
-  mountPath: /var/run/docker.sock
+  - name: docker-sock
+    mountPath: /var/run/docker.sock
