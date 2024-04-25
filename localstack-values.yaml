@@ -11,11 +11,6 @@ extraEnvVars:
       secretKeyRef:
         name: localstack-auth-token
         key: token
-  - name: LOCALSTACK_AUTH_TOKEN
-    valueFrom:
-      secretKeyRef:
-        name: localstack-auth-token
-        key: token
 debug: true
 mountDind:
   enabled: true

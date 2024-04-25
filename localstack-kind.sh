@@ -14,7 +14,7 @@ DEFAULT_PROVIDERS=(
   "function-go-templating"
 )
 
-if [ -n $LOCALSTACK_AUTH_TOKEN ]; then
+if [ ! -z $LOCALSTACK_AUTH_TOKEN ]; then
   DEFAULT_PROVIDERS+=(
     "rds"
     "eks"
@@ -265,7 +265,7 @@ header "Installing localstack..."
   yq -ie 'del(.extraEnvVars[] | select(.name == "LOCALSTACK_AUTH_TOKEN"))' localstack-values.yaml
   yq -ie '.image.repository = "localstack/localstack"' localstack-values.yaml
 
-  if [ -n "$LOCALSTACK_AUTH_TOKEN" ]; then
+  if [ ! -z "$LOCALSTACK_AUTH_TOKEN" ]; then
     echo "  [localstack] Installing localstack-pro..."
     echo "  [localstack] Creating localstack-auth-token secret..."
     kubectl create secret generic localstack-auth-token --namespace localstack-system \
