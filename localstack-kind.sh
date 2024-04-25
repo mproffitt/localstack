@@ -207,10 +207,14 @@ export PATH=$PATH:$(pwd)/bin
   cd ..
 }
 
-if ! grep -q "localhost.localstack.cloud" /etc/hosts; then
-  echo "Adding 'localhost.localstack.cloud' to /etc/hosts..."
-  echo "$(ip route get 1.2.3.4 | awk '{print $7}') localhost.localstack.cloud" | sudo tee -a /etc/hosts
-fi
+# I think this is a bit dangerous as it encompases altering system files, not
+# owned by the current user. Probably better left out for now and have the user
+# explicitly add it manually if they need to.
+#
+# if ! grep -q "localhost.localstack.cloud" /etc/hosts; then
+#   echo "Adding 'localhost.localstack.cloud' to /etc/hosts..."
+#   echo "$(ip route get 1.2.3.4 | awk '{print $7}') localhost.localstack.cloud" | sudo tee -a /etc/hosts
+# fi
 
 header "Setting up kind cluster 'localstack'..."
 {
