@@ -274,7 +274,6 @@ header "Installing localstack..."
     # Edit the values file to use the pro image and add the auth token
     yq -ie '.image.repository = "localstack/localstack-pro"' localstack-values.yaml
     yq -ie '.extraEnvVars += [{"name": "LOCALSTACK_AUTH_TOKEN", "valueFrom": {"secret": {"name": "localstack-auth-token", "key": "token"}}}]' localstack-values.yaml
-  else
   fi
 
   # rebuild chart dependencies
