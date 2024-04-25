@@ -1,19 +1,10 @@
 # Localstack installation
 
 This repo will install and configure localstack and crossplane inside a `kind`
-cluster running locally on your machine. It will then expose ports 80, 443 and 4566
-outside of the cluster so you can access localstack services using the AWS CLI
-and view your resources in `app.localstack.cloud`
+cluster running locally on your machine.
 
-> **Note**
->
-> This setup assumes you are using a localstack professional license.
->
-> If you do not have a professional license and are just using this for personal
-> educative purposes, I recommend you sign up for the hobby license which is free.
->
-> If you just want to use the opensource version, you will need to edit the
-> install script and localstack-values.yaml file to remote the pro bindings.
+If you have a professional license for localstack, it will install the pro version
+otherwise the opensource version will be installed.
 
 ## Prerequisites
 
@@ -23,32 +14,81 @@ In order to use this repo, there are certain prerequisites that have to be met.
 
 You need the following tools installed to work with this repo.
 
-- kustomize
-- helm
+- yq
+- curl
 - docker
 - kind
+
+The script also relies on both `helm` and `kustomize` however if these are not
+discovered in your environment, the script will download them temporarily to
+a bin folder at the current location `./`
 
 ### `/etc/hosts` file entry
 
 To ensure communication, you need to add a hostfile entry for your primary
 interface pointing to `localhost.localstack.cloud`
 
-```bash
-echo "$(ip route get 1.2.3.4 | awk '{print $7}') localhost.localstack.cloud" | sudo tee -a /etc/hosts
+```nohighlight
+192.168.1.2 localhost.localstack.cloud
 ```
 
 ### LOCALSTACK_AUTH_TOKEN
 
-Set your auth token into your environment
+If you have a professional license, set your auth token into your environment
 
 ```bash
 export LOCALSTACK_AUTH_TOKEN=<your-token>
 ```
 
-## Install
+### GITHUB_TOKEN
+
+This script relies on the github api for discovering crossplane provider and
+function versions. To prevent being rate limited by github, you may want to set
+your github PAT into your environment
 
 ```bash
-./install.sh
+export GITHUB_TOKEN=<your-token>
+```
+
+## Execution
+
+To run using the defaults:
+
+```bash
+./localstack-kind.sh
+```
+
+By default, the build script will install common AWS providers and composition
+functions for crossplane to enable you to get started quickly.
+
+### Providers
+
+- dynamodb
+- ec2
+- iam
+- kms
+- lambda
+- s3
+- sqs
+- sns
+
+### Functions
+
+- function-patch-and-transform
+- function-go-templating
+
+If you are running the professional version, the following providers will also
+be installed:
+
+- rds
+- eks
+
+Providers can be added to this set by passing them as args to the script.
+
+Likewise, providers can be removed by adding the name prefixed with a `-`
+
+```bash
+./localstack-kind.sh kinesis cloudformation -ec2 -lambda
 ```
 
 This installation will build a new kind cluster called `localstack` using the
@@ -64,30 +104,7 @@ Once the cluster has started, nginx is installed with the following flags enable
 - `--tcp-services-configmap=ingress-nginx/tcp-services` instructs NGINX to look
   for additional TCP services inside the `tcp-services` configmap
 
-Additonally to this, port 4566 is added to the list of container ports and also
-to the nginx service so it can be exposed outside the cluster.
-
 Localstack is installed using the values found inside `localstack-values.yaml`
-
-> **Note**
->
-> Currently the helm chart for `localstack` is forked into this repo. This is
-> because the upstream chart does not currently support `ingressClass` as a
-> available option, instead relying on the deprecated annotation to set the
-> ingress class.
->
-> Once this has been fixed, I will be removing the chart from this repo and
-> instead relying entirely on the upstream chart.
-
-Crossplane is installed into kind using default values. The installation script
-will also create the following providers and functions
-
-- upbound/provider-family-aws
-- upbound/provider-aws-ec2
-- upbound/provider-aws-kms
-- upbound/provider-aws-rds
-- crossplane-contrib/function-patch-and-transform
-- crossplane-contrib/function-go-templating
 
 It will also create a `ProviderConfig` with a dummy credential used to connect
 to localstack. Localstack itself doesn't care about the values but simply requires

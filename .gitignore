@@ -1,1 +1,2 @@
-charts/localstack/charts
+bin/*
+providers-generated.yaml

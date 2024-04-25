@@ -5,26 +5,31 @@ metadata:
   name: default
 spec:
   endpoint:
-    # If we don't set services, crossplane hangs trying to validate the
-    # credentials despite having skip_credentials_validation set to true
     services:
       - ec2
-      - kms
+      - s3
       - rds
+      - iam
+      - kms
+      - kinesis
+      - ""
+      - dynamodb
+      - lambda
+      - sqs
+      - sns
+      - eks
     # Within localstack, all services are available behind localhost.localstack.cloud
     # and this is the only name exposed via ingress
     hostnameImmutable: true
     url:
       type: Static
       static: "https://localhost.localstack.cloud"
-
   credentials:
     source: Secret
     secretRef:
       name: localstack-aws-token
       namespace: crossplane-system
       key: credentials
-
   skip_credentials_validation: true
   skip_metadata_api_check: true
   skip_requesting_account_id: true

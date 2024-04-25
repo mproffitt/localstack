@@ -18,9 +18,8 @@ extraEnvVars:
     secretKeyRef:
       name: localstack-auth-token
       key: token
-# Set up trace logging
 - name: LS_LOG
-  value: trace
+  value: debug
 
 debug: true
 
@@ -31,16 +30,16 @@ mountDind:
 
 ingress:
   enabled: true
-  class: "nginx"
+  ingressClassName: "nginx"
   annotations:
     nginx.ingress.kubernetes.io/backend-protocol: "HTTPS"
     nginx.ingress.kubernetes.io/ssl-passthrough: "true"
     nginx.ingress.kubernetes.io/ssl-redirect: "true"
   hosts:
-    - host: localhost.localstack.cloud
-      paths:
-        - path: /
-          pathType: ImplementationSpecific
+  - host: localhost.localstack.cloud
+    paths:
+      - path: /
+        pathType: ImplementationSpecific
   tls: []
 
 lambda:
