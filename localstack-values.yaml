@@ -2,7 +2,7 @@
 # Only change the image from `localstack/localstack` to `localstack/localstack-pro
 # if you have a pro subscription. Otherwise leave it on the default image.
 image:
-  repository: localstack/localstack-pro
+  repository: localstack/localstack
 
 extraEnvVars:
 # If you have a pro subscription, set the LOCALSTACK_AUTH_TOKEN to the value
