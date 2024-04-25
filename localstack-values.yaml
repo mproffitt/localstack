@@ -8,7 +8,12 @@ extraEnvVars:
     value: debug
   - name: LOCALSTACK_AUTH_TOKEN
     valueFrom:
-      secret:
+      secretKeyRef:
+        name: localstack-auth-token
+        key: token
+  - name: LOCALSTACK_AUTH_TOKEN
+    valueFrom:
+      secretKeyRef:
         name: localstack-auth-token
         key: token
 debug: true
