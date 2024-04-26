@@ -6,17 +6,15 @@ metadata:
 spec:
   endpoint:
     services:
-      - ec2
-      - s3
-      - rds
+      - dynamodb
       - iam
       - kms
-      - kinesis
-      - dynamodb
       - lambda
       - sqs
       - sns
+      - rds
       - eks
+      - kinesis
     # Within localstack, all services are available behind localhost.localstack.cloud
     # and this is the only name exposed via ingress
     hostnameImmutable: true

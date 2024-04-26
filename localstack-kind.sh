@@ -1,5 +1,5 @@
 #!/bin/bash
-set -o pipefail
+set -e -o pipefail
 
 DEFAULT_PROVIDERS=(
   "dynamodb"
@@ -19,11 +19,6 @@ if [ ! -z $LOCALSTACK_AUTH_TOKEN ]; then
     "rds"
     "eks"
   )
-fi
-
-TOKEN_HEADER=""
-if [ -n $GITHUB_TOKEN ]; then
-  TOKEN_HEADER=""
 fi
 
 function get_latest_version () {
@@ -76,11 +71,14 @@ echo "Creating localstack cluster with the following crossplane providers:"
 echo "  ${DEFAULT_PROVIDERS[*]}"
 echo
 
+# Reset the providerconfig services list to empty
+yq -ie '.spec.endpoint.services = []' providerconfig.yaml
 for provider in "${DEFAULT_PROVIDERS[@]}"; do
     if ! contains "function" $provider; then
       yq -ie "with(.spec.endpoint.services; select(all_c(. != \"$provider\")) | . += [\"$provider\"])" providerconfig.yaml
     fi
 done
+
 readonly timeout=90
 
 function print_logs () {
@@ -221,20 +219,12 @@ export PATH=$PATH:$(pwd)/bin
   cd ..
 }
 
-# I think this is a bit dangerous as it encompases altering system files, not
-# owned by the current user. Probably better left out for now and have the user
-# explicitly add it manually if they need to.
-#
-# if ! grep -q "localhost.localstack.cloud" /etc/hosts; then
-#   echo "Adding 'localhost.localstack.cloud' to /etc/hosts..."
-#   echo "$(ip route get 1.2.3.4 | awk '{print $7}') localhost.localstack.cloud" | sudo tee -a /etc/hosts
-# fi
-
+# Setup the kind cluster
 header "Setting up kind cluster 'localstack'..."
 {
   if kind get clusters | grep -q localstack; then
     echo "[kind] Deleting existing kind cluster 'localstack'..."
-    kind delete cluster -n localstack 2>/dev/null
+    kind delete cluster -n localstack 2>&1 | print_logs kind
   fi
   kind create cluster -n localstack --config kind.yaml
   echo
