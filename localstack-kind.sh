@@ -115,7 +115,7 @@ function wait_for_pod_ready () {
   # Wait for the resource to exist
   echo "  [$name] waiting for pod to be created..."
   echo -n "  [$name] "
-  until kubectl get pods -n $namespace -l $label_selector --no-headers | grep -q "Running"; do
+  until kubectl get pods -n $namespace -l $label_selector --no-headers 2>/dev/null | grep -q "Running"; do
     echo -n "."
     sleep 1
   done
@@ -146,16 +146,10 @@ if ! command -v kind &>/dev/null; then
 fi
 
 ##
-# Create the providers file.
-# Provider family AWS is always created
-cat <<EOT > providers-generated.yaml
-apiVersion: pkg.crossplane.io/v1
-kind: Provider
-metadata:
-  name: provider-family-aws
-spec:
-  package: xpkg.upbound.io/upbound/provider-family-aws:${DEFAULT_VERSION}
-EOT
+# Create the providers file
+if [ -f providers-generated.yaml ]; then
+  rm providers-generated.yaml
+fi
 
 ##
 # add the selected providers and functions to the providers file
@@ -276,7 +270,8 @@ name="crossplane"
 header "Installing Crossplane..."
 {
   kubectl create namespace crossplane-system | print_logs $name
-  helm install crossplane --namespace crossplane-system crossplane-stable/crossplane | print_logs $name
+  helm install crossplane --namespace crossplane-system crossplane-stable/crossplane \
+    --values crossplane-values.yaml| print_logs $name
 
   wait_for_pod_ready "crossplane" "crossplane-system" "app=crossplane"
   wait_for_pod_ready "crossplane-rbac-manager" "crossplane-system" "app=crossplane-rbac-manager"
@@ -289,15 +284,28 @@ header "Installing Crossplane..."
 
   # Wait for the provider and function CRDs to be ready
   echo "  [$name] Waiting for Crossplane to be ready..."
+
+  # Wait for the primary CRDs to be installed
   wait_for_cluster_resource $name crd providers.pkg.crossplane.io
   wait_for_cluster_resource $name crd functions.pkg.crossplane.io
+  wait_for_cluster_resource $name crd providerrevisions.pkg.crossplane.io
+  wait_for_cluster_resource $name crd functionrevisions.pkg.crossplane.io
+  wait_for_cluster_resource $name crd compositeresourcedefinitions.apiextensions.crossplane.io
 }
 
-# Occasionally crossplane doesn't finish preparing before the providers are
-# installed, so we'll sleep for a bit to give it time to (hopefully) finish
-echo
-echo "Sleeping 30 seconds"
-sleep 30
+# Create the provider family for AWS
+cat <<EOT | kubectl apply -f - | print_logs "crossplane-provider-family-aws"
+apiVersion: pkg.crossplane.io/v1
+kind: Provider
+metadata:
+  name: provider-family-aws
+spec:
+  package: xpkg.upbound.io/upbound/provider-family-aws:${DEFAULT_VERSION}
+EOT
+
+wait_for_pod_ready "crossplane-provider-family-aws" \
+  "crossplane-system" \
+  "pkg.crossplane.io/provider=provider-family-aws"
 
 # install the providers and provider config
 name="providers"
